@@ -23,6 +23,7 @@ import Orderbook from "./components/orderbook";
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
   const [timeframe, setTimeframe] = useState("1m");
+  const [pair, setPair] = useState("btcusdt");
   const { 
     depthData, 
     klinesData, 
@@ -79,6 +80,11 @@ export default function Home() {
     // Logic to unsubscribe and subscribe to new klines stream
   };
 
+  const handlePairChange = (newPair: string) => {
+    setPair(newPair);
+    // Logic to unsubscribe and subscribe to new klines stream
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Binance WebSocket Test</h1>
@@ -125,6 +131,20 @@ export default function Home() {
                 <SelectItem value="1h">1h</SelectItem>
                 <SelectItem value="4h">4h</SelectItem>
                 <SelectItem value="1D">1D</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Select onValueChange={handlePairChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="BTCUSDT" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Pair</SelectLabel>
+                <SelectItem value="BTCUSDT">BTCUSDT</SelectItem>
+                <SelectItem value="ETHUSDT">ETHUSDT</SelectItem>
+                <SelectItem value="SOLUSDT">SOLUSDT</SelectItem>
+                <SelectItem value="PEPEUSDT">PEPEUSDT</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
