@@ -2,6 +2,16 @@
 
 import { useBinanceWebSocket } from "./services/binanceWebSocket";
 import { useState, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,23 +82,42 @@ export default function Home() {
           </div>
         )}
 
-        <button
-          onClick={isConnected ? handleCloseConnection : handleOpenConnection}
-          className={`px-4 py-2 rounded ${
-            isConnected 
-              ? 'bg-red-500 hover:bg-red-600' 
-              : 'bg-green-500 hover:bg-green-600'
-          } text-white`}
-          disabled={isConnecting}
-        >
-          {isConnecting 
-            ? 'Connecting...' 
-            : isConnected 
-              ? 'Close Connection' 
-              : 'Open Connection'
-          }
-        </button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={isConnected ? handleCloseConnection : handleOpenConnection}
+            className={`px-4 py-2 rounded ${
+              isConnected 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : 'bg-green-500 hover:bg-green-600'
+            } text-white`}
+            disabled={isConnecting}
+          >
+            {isConnecting 
+              ? 'Connecting...' 
+              : isConnected 
+                ? 'Close Connection' 
+                : 'Open Connection'
+            }
+          </Button>
+          <Select>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="1m" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Timeframe</SelectLabel>
+                <SelectItem value="1m">1m</SelectItem>
+                <SelectItem value="5m">5m</SelectItem>
+                <SelectItem value="15m">15m</SelectItem>
+                <SelectItem value="1h">1h</SelectItem>
+                <SelectItem value="4h">4h</SelectItem>
+                <SelectItem value="1D">1D</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        <div/>
       </div>
+    </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
