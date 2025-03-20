@@ -97,10 +97,15 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
             // Update candlestick data
             seriesRef.current.setData(historicalKlines);
 
+            // Find the scale factor for volume if needed
+            const maxVolume = Math.max(...historicalKlines.map(kline => parseFloat(kline.volume || 0)));
+            const VOLUME_LIMIT = 90071992547409;
+            const scaleFactor = maxVolume > VOLUME_LIMIT ? VOLUME_LIMIT / maxVolume : 1;
+
             // Update volume data with colors based on price movement
             const volumeData = historicalKlines.map((kline: any) => ({
                 time: kline.time,
-                value: parseFloat(kline.volume || 0),
+                value: parseFloat(kline.volume || 0) * scaleFactor,
                 color: kline.close >= kline.open ? '#26a69a80' : '#ef535080'
             }));
             volumeSeriesRef.current.setData(volumeData);
