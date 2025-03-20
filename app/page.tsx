@@ -1,7 +1,7 @@
 'use client'
 
-import { useBinanceWebSocket } from "./services/binanceWebSocket";
 import { useState, useEffect } from "react";
+import { useBinanceWebSocket } from "@/services/binanceWebSocket";
 import {
   Select,
   SelectContent,
@@ -17,17 +17,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import Orderbook from "./components/orderbook";
+import Orderbook from "@/components/common/orderbook";
 
 export default function Home() {
-  const [isOpen, setIsOpen] = useState(true); // Always open
   const [timeframe, setTimeframe] = useState("1m");
   const [pair, setPair] = useState("btcusdt");
   const { 
     depthData, 
     klinesData, 
     isConnected 
-  } = useBinanceWebSocket(isOpen, timeframe, pair);
+  } = useBinanceWebSocket(true, timeframe, pair);
 
   // Add effect to log data changes
   useEffect(() => {
