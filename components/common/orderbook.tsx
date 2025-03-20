@@ -16,7 +16,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
   console.log("Received depthData:", depthData);
 
   const filterNonZero = (orders: string[][]) => {
-    return orders.filter(order => parseFloat(order[1]) > 0).slice(0, 10);
+    return orders.filter(order => parseFloat(order[1]) > 0).slice(0, 9);
   };
 
   const formatPrice = (price: number) => {
