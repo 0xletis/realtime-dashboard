@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Define the type for depth data
@@ -13,7 +13,11 @@ interface OrderBookProps {
   depthData: DepthData | null
 }
 
-export default function OrderBook({ depthData }: OrderBookProps) {
+const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
+  const filterNonZero = (orders: string[][]) => {
+    return orders.filter(order => parseFloat(order[1]) > 0).slice(0, 10);
+  };
+
   if (!depthData || !depthData.b || !depthData.a) {
     return (
       <Card>
@@ -29,11 +33,11 @@ export default function OrderBook({ depthData }: OrderBookProps) {
     )
   }
 
-  // Sort asks in ascending order (lowest ask first)
-  const sortedAsks = [...depthData.a].sort((a, b) => Number.parseFloat(a[0]) - Number.parseFloat(b[0])).slice(0, 10)
+  // Sort asks in ascending order (lowest ask first) and reverse for display
+  const sortedAsks = filterNonZero([...depthData.a].sort((a, b) => Number.parseFloat(a[0]) - Number.parseFloat(b[0]))).reverse();
 
   // Sort bids in descending order (highest bid first)
-  const sortedBids = [...depthData.b].sort((a, b) => Number.parseFloat(b[0]) - Number.parseFloat(a[0])).slice(0, 10)
+  const sortedBids = filterNonZero([...depthData.b].sort((a, b) => Number.parseFloat(b[0]) - Number.parseFloat(a[0])));
 
   // Calculate the spread
   const lowestAsk = Number.parseFloat(sortedAsks[0][0])
@@ -66,7 +70,7 @@ export default function OrderBook({ depthData }: OrderBookProps) {
             <div className="col-span-3 text-right">Total</div>
           </div>
           <div className="space-y-[2px]">
-            {sortedAsks.reverse().map((ask, index) => {
+            {sortedAsks.map((ask, index) => {
               const price = Number.parseFloat(ask[0])
               const quantity = Number.parseFloat(ask[1])
               const volumePercentage = (quantity / maxQuantity) * 100
@@ -129,4 +133,6 @@ export default function OrderBook({ depthData }: OrderBookProps) {
     </Card>
   )
 }
+
+export default OrderBook;
 
