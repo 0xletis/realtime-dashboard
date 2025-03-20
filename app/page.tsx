@@ -15,11 +15,10 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import Orderbook from "./components/orderbook";
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
@@ -176,49 +175,7 @@ export default function Home() {
         </Card>
 
         {/* Depth Data */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Book (Depth)</CardTitle>
-          </CardHeader>
-          <CardContent>
-          {depthData && depthData.b && depthData.a ? (
-              <div>
-                <div className="mb-2 flex justify-around">
-                  <div>
-                    <strong>Last Update ID:</strong> {depthData.u}
-                  </div>
-                  <div>
-                    <strong>Event Time:</strong> {new Date(depthData.E).toLocaleString()}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-semibold mb-1">Bids (Top 10)</h3>
-                    <div className="space-y-1">
-                      {Array.isArray(depthData.b) && depthData.b.slice(0, 10).map((bid: string[], index: number) => (
-                        <div key={index} className="text-green-600">
-                          Price: {bid[0]} | Quantity: {bid[1]}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Asks (Top 10)</h3>
-                    <div className="space-y-1">
-                      {Array.isArray(depthData.a) && depthData.a.slice(0, 10).map((ask: string[], index: number) => (
-                        <div key={index} className="text-red-600">
-                          Price: {ask[0]} | Quantity: {ask[1]}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-gray-500">No depth data available</div>
-            )}
-          </CardContent>
-        </Card>
+        <Orderbook depthData={depthData}></Orderbook>
         
       </div>
     </div>
