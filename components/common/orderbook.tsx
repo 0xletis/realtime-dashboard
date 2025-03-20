@@ -19,7 +19,13 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
   };
 
   const formatPrice = (price: number) => {
-    return price < 0.1 ? price.toFixed(8) : price.toFixed(2);
+    return price >= 1 ? price.toFixed(2) : price.toFixed(8);
+  };
+
+  const formatAmount = (amount: number) => {
+    if (amount >= 10000) return amount.toFixed(0);
+    if (amount >= 10) return amount.toFixed(2);
+    return amount.toFixed(5);
   };
 
   if (!depthData || !depthData.bids || !depthData.asks) {
@@ -86,7 +92,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
                     style={{ width: `${volumePercentage}%` }}
                   />
                   <div className="col-span-5 text-left font-mono text-red-500 z-10">{formatPrice(price)}</div>
-                  <div className="col-span-4 text-right font-mono z-10">{quantity.toFixed(6)}</div>
+                  <div className="col-span-4 text-right font-mono z-10">{formatAmount(quantity)}</div>
                   <div className="col-span-3 text-right font-mono text-muted-foreground z-10">
                     {(price * quantity).toFixed(2)}
                   </div>
@@ -124,7 +130,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
                     style={{ width: `${volumePercentage}%` }}
                   />
                   <div className="col-span-5 text-left font-mono text-green-500 z-10">{formatPrice(price)}</div>
-                  <div className="col-span-4 text-right font-mono z-10">{quantity.toFixed(4)}</div>
+                  <div className="col-span-4 text-right font-mono z-10">{formatAmount(quantity)}</div>
                   <div className="col-span-3 text-right font-mono text-muted-foreground z-10">
                     {(price * quantity).toFixed(2)}
                   </div>

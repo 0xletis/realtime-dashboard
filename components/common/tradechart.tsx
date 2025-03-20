@@ -35,12 +35,18 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
             chartRef.current = createChart(container, chartOptions);
 
             // Add the candlestick series
+            const isLowValuePair = pair.toUpperCase() === 'PEPEUSDT';
             seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
                 upColor: '#26a69a',
                 downColor: '#ef5350',
                 borderVisible: false,
                 wickUpColor: '#26a69a',
-                wickDownColor: '#ef5350'
+                wickDownColor: '#ef5350',
+                priceFormat: {
+                    type: 'price',
+                    precision: isLowValuePair ? 8 : 2,
+                    minMove: isLowValuePair ? 0.00000001 : 0.01,
+                }
             });
 
             // Configure candlestick series margins
@@ -48,7 +54,8 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
                 scaleMargins: {
                     top: 0.1, // highest point of the series will be 10% away from the top
                     bottom: 0.4, // lowest point will be 40% away from the bottom
-                }
+                },
+                autoScale: true
             });
 
             // Add the volume series
@@ -100,6 +107,16 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
 
             // Only fit content and reset scale when pair changes
             if (previousPairRef.current !== pair) {
+                // Adjust price format based on the pair
+                const isLowValuePair = pair.toUpperCase() === 'PEPEUSDT';
+                seriesRef.current.applyOptions({
+                    priceFormat: {
+                        type: 'price',
+                        precision: isLowValuePair ? 8 : 2,
+                        minMove: isLowValuePair ? 0.00000001 : 0.01,
+                    }
+                });
+
                 seriesRef.current.priceScale().applyOptions({
                     autoScale: true
                 });
