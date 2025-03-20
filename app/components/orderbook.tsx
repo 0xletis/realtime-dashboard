@@ -3,17 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Define the type for depth data
 interface DepthData {
-  u: number // Last update ID
-  E: number // Event time
-  b: string[][] // Bids array [price, quantity]
-  a: string[][] // Asks array [price, quantity]
+  lastUpdateId: number;
+  bids: string[][];
+  asks: string[][];
 }
 
 interface OrderBookProps {
-  depthData: DepthData | null
+  depthData: DepthData | null;
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
+  console.log("Received depthData:", depthData);
+
   const filterNonZero = (orders: string[][]) => {
     return orders.filter(order => parseFloat(order[1]) > 0).slice(0, 10);
   };
@@ -22,7 +23,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
     return price < 0.1 ? price.toFixed(8) : price.toFixed(2);
   };
 
-  if (!depthData || !depthData.b || !depthData.a) {
+  if (!depthData || !depthData.bids || !depthData.asks) {
     return (
       <Card>
         <CardHeader>
@@ -34,26 +35,26 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // Sort asks in ascending order (lowest ask first) and reverse for display
-  const sortedAsks = filterNonZero([...depthData.a].sort((a, b) => Number.parseFloat(a[0]) - Number.parseFloat(b[0]))).reverse();
+  const sortedAsks = filterNonZero([...depthData.asks].sort((a, b) => Number.parseFloat(a[0]) - Number.parseFloat(b[0]))).reverse();
 
   // Sort bids in descending order (highest bid first)
-  const sortedBids = filterNonZero([...depthData.b].sort((a, b) => Number.parseFloat(b[0]) - Number.parseFloat(a[0])));
+  const sortedBids = filterNonZero([...depthData.bids].sort((a, b) => Number.parseFloat(b[0]) - Number.parseFloat(a[0])));
 
   // Calculate the spread
-  const lowestAsk = Number.parseFloat(sortedAsks[0][0])
-  const highestBid = Number.parseFloat(sortedBids[0][0])
-  const spread = lowestAsk - highestBid
-  const spreadPercentage = (spread / lowestAsk) * 100
+  const lowestAsk = Number.parseFloat(sortedAsks[0][0]);
+  const highestBid = Number.parseFloat(sortedBids[0][0]);
+  const spread = lowestAsk - highestBid;
+  const spreadPercentage = (spread / lowestAsk) * 100;
 
   // Find the maximum quantity for volume visualization
   const maxQuantity = Math.max(
     ...sortedAsks.map((ask) => Number.parseFloat(ask[1])),
     ...sortedBids.map((bid) => Number.parseFloat(bid[1])),
-  )
+  );
 
   return (
     <Card className="w-full">
@@ -61,7 +62,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
         <CardTitle className="flex justify-between items-center">
           <span>Order Book (Depth)</span>
           <span className="text-sm font-normal text-muted-foreground">
-            Last Update: {new Date(depthData.E).toLocaleTimeString()}
+            Last Update: {new Date().toLocaleTimeString()}
           </span>
         </CardTitle>
       </CardHeader>
@@ -75,9 +76,9 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
           </div>
           <div className="space-y-[2px]">
             {sortedAsks.map((ask, index) => {
-              const price = Number.parseFloat(ask[0])
-              const quantity = Number.parseFloat(ask[1])
-              const volumePercentage = (quantity / maxQuantity) * 100
+              const price = Number.parseFloat(ask[0]);
+              const quantity = Number.parseFloat(ask[1]);
+              const volumePercentage = (quantity / maxQuantity) * 100;
 
               return (
                 <div key={`ask-${index}`} className="grid grid-cols-12 text-xs relative py-1 px-2">
@@ -91,7 +92,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
                     {(price * quantity).toFixed(2)}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -113,9 +114,9 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
           </div>
           <div className="space-y-[2px]">
             {sortedBids.map((bid, index) => {
-              const price = Number.parseFloat(bid[0])
-              const quantity = Number.parseFloat(bid[1])
-              const volumePercentage = (quantity / maxQuantity) * 100
+              const price = Number.parseFloat(bid[0]);
+              const quantity = Number.parseFloat(bid[1]);
+              const volumePercentage = (quantity / maxQuantity) * 100;
 
               return (
                 <div key={`bid-${index}`} className="grid grid-cols-12 text-xs relative py-1 px-2">
@@ -129,14 +130,14 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
                     {(price * quantity).toFixed(2)}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
 export default OrderBook;
 

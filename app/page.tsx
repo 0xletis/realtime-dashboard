@@ -50,6 +50,8 @@ export default function Home() {
     setPair(newPair);
   };
 
+  console.log("Depth data in Home:", depthData);
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Binance WebSocket Test</h1>
