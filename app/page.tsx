@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useBinanceWebSocket } from "@/services/binanceWebSocket";
+import TradeChart from "@/components/common/tradechart";
 import {
   Select,
   SelectContent,
@@ -98,6 +99,10 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Klines Data */}
+        
+          <TradeChart />
+        
+        
         <Card>
           <CardHeader>
             <CardTitle>Klines Data</CardTitle>
