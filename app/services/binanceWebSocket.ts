@@ -4,8 +4,6 @@ const BINANCE_WS_URL = "wss://stream.binance.com:9443/stream";
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 3;
 
-type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
-
 interface KlineData {
   t: number;  // Kline start time
   T: number;  // Kline close time
@@ -34,95 +32,62 @@ interface KlineMessage {
 interface WebSocketState {
   depthData: any;
   klinesData: KlineMessage | null;
-  status: ConnectionStatus;
-  error: string | null;
 }
 
-export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
+export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: string) => {
   const [state, setState] = useState<WebSocketState>({
     depthData: null,
     klinesData: null,
-    status: 'disconnected',
-    error: null
   });
   
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef<number>(0);
   const userInitiatedClose = useRef<boolean>(false);
+  const currentPair = useRef<string>(pair);
+  const currentTimeframe = useRef<string>(timeframe);
 
-  const subscribeToStreams = () => {
+  const subscribeToDepth = (pair: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      // First, set the combined property
-      const setPropertyMessage = JSON.stringify({
-        method: "SET_PROPERTY",
-        params: ["combined", true],
-        id: 1
-      });
-      ws.current.send(setPropertyMessage);
-      console.log("Setting combined property:", setPropertyMessage);
-
-      // Subscribe to depth stream
       const depthSubscribeMessage = JSON.stringify({
         method: "SUBSCRIBE",
-        params: ["btcusdt@depth"],
+        params: [`${pair.toLowerCase()}@depth`],
         id: 2
       });
       ws.current.send(depthSubscribeMessage);
-      console.log("Subscribing to depth:", depthSubscribeMessage);
-
-      // Subscribe to klines stream (1m interval)
-      const klinesSubscribeMessage = JSON.stringify({
-        method: "SUBSCRIBE",
-        params: ["btcusdt@kline_1m"],
-        id: 3
-      });
-      ws.current.send(klinesSubscribeMessage);
-      console.log("Subscribing to klines:", klinesSubscribeMessage);
     }
   };
 
-  const unsubscribeFromStreams = () => {
+  const unsubscribeFromDepth = (pair: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      // Unsubscribe from depth stream
       const depthUnsubscribeMessage = JSON.stringify({
         method: "UNSUBSCRIBE",
-        params: ["btcusdt@depth"],
+        params: [`${pair.toLowerCase()}@depth`],
         id: 2
       });
       ws.current.send(depthUnsubscribeMessage);
-
-      // Unsubscribe from klines stream
-      const klinesUnsubscribeMessage = JSON.stringify({
-        method: "UNSUBSCRIBE",
-        params: ["btcusdt@kline_1m"],
-        id: 3
-      });
-      ws.current.send(klinesUnsubscribeMessage);
     }
   };
 
-  const subscribeToKlines = (timeframe: string) => {
+  const subscribeToKlines = (pair: string, timeframe: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       const klinesSubscribeMessage = JSON.stringify({
         method: "SUBSCRIBE",
-        params: [`btcusdt@kline_${timeframe}`],
+        params: [`${pair.toLowerCase()}@kline_${timeframe}`],
         id: 3
       });
       ws.current.send(klinesSubscribeMessage);
-      console.log("Subscribing to klines:", klinesSubscribeMessage);
     }
   };
 
-  const unsubscribeFromKlines = (timeframe: string) => {
+  const unsubscribeFromKlines = (pair: string, timeframe: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       const klinesUnsubscribeMessage = JSON.stringify({
         method: "UNSUBSCRIBE",
-        params: [`btcusdt@kline_${timeframe}`],
+        params: [`${pair.toLowerCase()}@kline_${timeframe}`],
         id: 3
       });
       ws.current.send(klinesUnsubscribeMessage);
-      console.log("Unsubscribing from klines:", klinesUnsubscribeMessage);
     }
   };
 
@@ -131,49 +96,30 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
       return;
     }
 
-    // Reset state for new connection
-    setState(prev => ({ ...prev, status: 'connecting', error: null }));
     userInitiatedClose.current = false;
 
     try {
       ws.current = new WebSocket(BINANCE_WS_URL);
 
       ws.current.onopen = () => {
-        console.log("WebSocket connected, setting up streams...");
-        setState(prev => ({ ...prev, status: 'connected', error: null }));
-        reconnectAttempts.current = 0; // Reset reconnect attempts on successful connection
-        subscribeToStreams();
+        reconnectAttempts.current = 0;
+        subscribeToDepth(currentPair.current);
+        subscribeToKlines(currentPair.current, currentTimeframe.current);
       };
 
       ws.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          console.log("Raw WebSocket message:", message);
           
-          // Skip subscription responses
           if (message.result !== undefined) {
-            console.log("Skipping subscription response:", message);
             return;
           }
 
-          // Handle stream messages
           if (message.stream) {
             if (message.stream.includes('@depth')) {
-              console.log("Processing depth data:", message.data);
-              setState(prev => {
-                console.log("Previous state before depth update:", prev);
-                const newState = { ...prev, depthData: message.data };
-                console.log("New state after depth update:", newState);
-                return newState;
-              });
+              setState(prev => ({ ...prev, depthData: message.data }));
             } else if (message.stream.includes('@kline')) {
-              console.log("Processing klines data:", message.data);
-              setState(prev => {
-                console.log("Previous state before klines update:", prev);
-                const newState = { ...prev, klinesData: message.data as KlineMessage };
-                console.log("New state after klines update:", newState);
-                return newState;
-              });
+              setState(prev => ({ ...prev, klinesData: message.data as KlineMessage }));
             }
           }
         } catch (error) {
@@ -182,50 +128,20 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
       };
 
       ws.current.onclose = (event) => {
-        console.log("WebSocket closed:", event);
-        setState(prev => ({ 
-          ...prev, 
-          status: 'disconnected',
-          error: userInitiatedClose.current ? null : 'Connection closed unexpectedly'
-        }));
-
-        // Only attempt to reconnect if:
-        // 1. It wasn't user initiated
-        // 2. We're still meant to be open
-        // 3. Haven't exceeded max attempts
-        if (!userInitiatedClose.current && isOpen && reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
-          reconnectAttempts.current += 1;
-          setState(prev => ({
-            ...prev,
-            error: `Connection lost. Reconnecting... (Attempt ${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})`
-          }));
-          
-          reconnectTimeout.current = setTimeout(connect, RECONNECT_DELAY);
-        } else if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
-          setState(prev => ({
-            ...prev,
-            status: 'error',
-            error: 'Maximum reconnection attempts reached. Please try again later.'
-          }));
+        if (!userInitiatedClose.current) {
+          if (isOpen && reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts.current += 1;
+            reconnectTimeout.current = setTimeout(connect, RECONNECT_DELAY);
+          }
         }
       };
 
       ws.current.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        setState(prev => ({
-          ...prev,
-          status: 'error',
-          error: 'WebSocket encountered an error'
-        }));
+        console.error("WebSocket encountered an error:", error);
       };
 
     } catch (error) {
-      console.error("Failed to create WebSocket:", error);
-      setState(prev => ({
-        ...prev,
-        status: 'error',
-        error: 'Failed to create WebSocket connection'
-      }));
+      console.error("Failed to create WebSocket connection:", error);
     }
   };
 
@@ -239,7 +155,8 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
 
     if (ws.current) {
       if (ws.current.readyState === WebSocket.OPEN) {
-        unsubscribeFromStreams();
+        unsubscribeFromDepth(currentPair.current);
+        unsubscribeFromKlines(currentPair.current, currentTimeframe.current);
         ws.current.close();
       }
       ws.current = null;
@@ -248,15 +165,17 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
     setState({
       depthData: null,
       klinesData: null,
-      status: 'disconnected',
-      error: null
     });
     
     reconnectAttempts.current = 0;
   };
 
   useEffect(() => {
+    currentPair.current = pair;
+    currentTimeframe.current = timeframe;
+
     if (isOpen) {
+      disconnect(); // Ensure clean disconnection before connecting
       connect();
     } else {
       disconnect();
@@ -265,29 +184,24 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
     return () => {
       disconnect();
     };
-  }, [isOpen]);
+  }, [isOpen, pair]);
 
   useEffect(() => {
     if (isOpen) {
-      subscribeToKlines(timeframe);
+      // Unsubscribe from the current klines stream
+      unsubscribeFromKlines(currentPair.current, currentTimeframe.current);
+      
+      // Update the current timeframe reference
+      currentTimeframe.current = timeframe;
+      
+      // Subscribe to the new klines stream
+      subscribeToKlines(currentPair.current, currentTimeframe.current);
     }
-    return () => {
-      unsubscribeFromKlines(timeframe);
-    };
-  }, [isOpen, timeframe]);
-
-  // Add state change logging
-  useEffect(() => {
-    console.log("State changed:", state);
-  }, [state]);
+  }, [timeframe]);
 
   return {
     depthData: state.depthData,
     klinesData: state.klinesData,
-    status: state.status,
-    error: state.error,
-    isConnecting: state.status === 'connecting',
-    isConnected: state.status === 'connected',
-    hasError: state.status === 'error'
+    isConnected: !!state.depthData && !!state.klinesData,
   };
 };

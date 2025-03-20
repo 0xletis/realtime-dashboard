@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -21,68 +20,34 @@ import {
 import Orderbook from "./components/orderbook";
 
 export default function Home() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Always open
   const [timeframe, setTimeframe] = useState("1m");
   const [pair, setPair] = useState("btcusdt");
   const { 
     depthData, 
     klinesData, 
-    status, 
-    error, 
-    isConnecting,
     isConnected 
-  } = useBinanceWebSocket(isOpen, timeframe);
+  } = useBinanceWebSocket(isOpen, timeframe, pair);
 
   // Add effect to log data changes
   useEffect(() => {
     console.log("Page component received new data:", {
       depthData,
       klinesData,
-      status
+      isConnected
     });
-  }, [depthData, klinesData, status]);
-
-  const handleOpenConnection = () => {
-    console.log("Opening connection...");
-    setIsOpen(true);
-  };
-
-  const handleCloseConnection = () => {
-    console.log("Closing connection...");
-    setIsOpen(false);
-  };
+  }, [depthData, klinesData, isConnected]);
 
   const getStatusIcon = () => {
-    switch (status) {
-      case 'connected':
-        return "🟢";
-      case 'connecting':
-        return "🟡";
-      case 'error':
-        return "🔴";
-      default:
-        return "⚪";
-    }
+    return isConnected ? "🟢" : "🔴";
   };
-
-  // Add debugging information
-  console.log("Current state:", {
-    isOpen,
-    status,
-    hasDepthData: !!depthData,
-    hasKlinesData: !!klinesData,
-    depthData,
-    klinesData
-  });
 
   const handleTimeframeChange = (newTimeframe: string) => {
     setTimeframe(newTimeframe);
-    // Logic to unsubscribe and subscribe to new klines stream
   };
 
   const handlePairChange = (newPair: string) => {
     setPair(newPair);
-    // Logic to unsubscribe and subscribe to new klines stream
   };
 
   return (
@@ -92,32 +57,10 @@ export default function Home() {
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
           <span>{getStatusIcon()}</span>
-          <span>Status: {status}</span>
+          <span>Status: {isConnected ? 'Connected' : 'Disconnected'}</span>
         </div>
 
-        {error && (
-          <div className="text-red-500 mb-2">
-            Error: {error}
-          </div>
-        )}
-
         <div className="flex items-center gap-2">
-          <Button
-            onClick={isConnected ? handleCloseConnection : handleOpenConnection}
-            className={`px-4 py-2 rounded ${
-              isConnected 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-green-500 hover:bg-green-600'
-            } text-white`}
-            disabled={isConnecting}
-          >
-            {isConnecting 
-              ? 'Connecting...' 
-              : isConnected 
-                ? 'Close Connection' 
-                : 'Open Connection'
-            }
-          </Button>
           <Select onValueChange={handleTimeframeChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="1m" />
