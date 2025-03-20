@@ -94,16 +94,19 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
     // Update the chart with new kline data
     useEffect(() => {
         if (seriesRef.current && volumeSeriesRef.current && historicalKlines.length > 0) {
+            // Sort data by time in ascending order
+            const sortedKlines = [...historicalKlines].sort((a, b) => a.time - b.time);
+
             // Update candlestick data
-            seriesRef.current.setData(historicalKlines);
+            seriesRef.current.setData(sortedKlines);
 
             // Find the scale factor for volume if needed
-            const maxVolume = Math.max(...historicalKlines.map(kline => parseFloat(kline.volume || 0)));
+            const maxVolume = Math.max(...sortedKlines.map(kline => parseFloat(kline.volume || 0)));
             const VOLUME_LIMIT = 90071992547409;
             const scaleFactor = maxVolume > VOLUME_LIMIT ? VOLUME_LIMIT / maxVolume : 1;
 
             // Update volume data with colors based on price movement
-            const volumeData = historicalKlines.map((kline: any) => ({
+            const volumeData = sortedKlines.map((kline: any) => ({
                 time: kline.time,
                 value: parseFloat(kline.volume || 0) * scaleFactor,
                 color: kline.close >= kline.open ? '#26a69a80' : '#ef535080'
