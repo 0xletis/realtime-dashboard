@@ -12,6 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
@@ -122,10 +130,12 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Klines Data */}
-        <div className="mt-4">
-          <h2 className="text-xl font-semibold mb-2">Klines Data:</h2>
-          <div className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
-            {klinesData && klinesData.k ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Klines Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+          {klinesData && klinesData.k ? (
               <div>
                 <div className="mb-2">
                   <strong>Symbol:</strong> {klinesData.s}
@@ -157,14 +167,16 @@ export default function Home() {
             ) : (
               <div className="text-gray-500">No klines data available</div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Depth Data */}
-        <div className="mt-4">
-          <h2 className="text-xl font-semibold mb-2">Order Book (Depth):</h2>
-          <div className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
-            {depthData && depthData.b && depthData.a ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Book (Depth)</CardTitle>
+          </CardHeader>
+          <CardContent>
+          {depthData && depthData.b && depthData.a ? (
               <div>
                 <div className="mb-2">
                   <strong>Last Update ID:</strong> {depthData.u}
@@ -198,8 +210,8 @@ export default function Home() {
             ) : (
               <div className="text-gray-500">No depth data available</div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         
       </div>
     </div>
