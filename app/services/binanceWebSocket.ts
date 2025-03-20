@@ -38,7 +38,7 @@ interface WebSocketState {
   error: string | null;
 }
 
-export const useBinanceWebSocket = (isOpen: boolean) => {
+export const useBinanceWebSocket = (isOpen: boolean, timeframe: string) => {
   const [state, setState] = useState<WebSocketState>({
     depthData: null,
     klinesData: null,
@@ -99,6 +99,30 @@ export const useBinanceWebSocket = (isOpen: boolean) => {
         id: 3
       });
       ws.current.send(klinesUnsubscribeMessage);
+    }
+  };
+
+  const subscribeToKlines = (timeframe: string) => {
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      const klinesSubscribeMessage = JSON.stringify({
+        method: "SUBSCRIBE",
+        params: [`btcusdt@kline_${timeframe}`],
+        id: 3
+      });
+      ws.current.send(klinesSubscribeMessage);
+      console.log("Subscribing to klines:", klinesSubscribeMessage);
+    }
+  };
+
+  const unsubscribeFromKlines = (timeframe: string) => {
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      const klinesUnsubscribeMessage = JSON.stringify({
+        method: "UNSUBSCRIBE",
+        params: [`btcusdt@kline_${timeframe}`],
+        id: 3
+      });
+      ws.current.send(klinesUnsubscribeMessage);
+      console.log("Unsubscribing from klines:", klinesUnsubscribeMessage);
     }
   };
 
@@ -242,6 +266,15 @@ export const useBinanceWebSocket = (isOpen: boolean) => {
       disconnect();
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      subscribeToKlines(timeframe);
+    }
+    return () => {
+      unsubscribeFromKlines(timeframe);
+    };
+  }, [isOpen, timeframe]);
 
   // Add state change logging
   useEffect(() => {

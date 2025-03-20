@@ -23,6 +23,7 @@ import {
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
+  const [timeframe, setTimeframe] = useState("1m");
   const { 
     depthData, 
     klinesData, 
@@ -30,7 +31,7 @@ export default function Home() {
     error, 
     isConnecting,
     isConnected 
-  } = useBinanceWebSocket(isOpen);
+  } = useBinanceWebSocket(isOpen, timeframe);
 
   // Add effect to log data changes
   useEffect(() => {
@@ -74,6 +75,11 @@ export default function Home() {
     klinesData
   });
 
+  const handleTimeframeChange = (newTimeframe: string) => {
+    setTimeframe(newTimeframe);
+    // Logic to unsubscribe and subscribe to new klines stream
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Binance WebSocket Test</h1>
@@ -107,7 +113,7 @@ export default function Home() {
                 : 'Open Connection'
             }
           </Button>
-          <Select>
+          <Select onValueChange={handleTimeframeChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="1m" />
             </SelectTrigger>
@@ -123,9 +129,8 @@ export default function Home() {
               </SelectGroup>
             </SelectContent>
           </Select>
-        <div/>
+        </div>
       </div>
-    </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
@@ -178,11 +183,13 @@ export default function Home() {
           <CardContent>
           {depthData && depthData.b && depthData.a ? (
               <div>
-                <div className="mb-2">
-                  <strong>Last Update ID:</strong> {depthData.u}
-                </div>
-                <div className="mb-2">
-                  <strong>Event Time:</strong> {new Date(depthData.E).toLocaleString()}
+                <div className="mb-2 flex justify-around">
+                  <div>
+                    <strong>Last Update ID:</strong> {depthData.u}
+                  </div>
+                  <div>
+                    <strong>Event Time:</strong> {new Date(depthData.E).toLocaleString()}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
