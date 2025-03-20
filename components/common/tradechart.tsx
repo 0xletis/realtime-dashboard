@@ -22,6 +22,9 @@ const TradeChart = ({ historicalKlines }: TradeChartProps) => {
                 layout: {
                     textColor: 'black',
                     background: { color: 'white' }
+                },
+                timeScale: {
+                    timeVisible: true
                 }
             };
 
