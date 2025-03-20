@@ -12,12 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import Orderbook from "@/components/common/orderbook";
 
 export default function Home() {
@@ -45,8 +39,6 @@ export default function Home() {
   const handlePairChange = (newPair: string) => {
     setPair(newPair);
   };
-
-  console.log("Depth data in Home:", depthData);
 
   return (
     <div className="p-4">
@@ -94,7 +86,7 @@ export default function Home() {
               </div>
           </div>
           {/* Kline Chart */}
-          <TradeChart historicalKlines={historicalKlines} />
+          <TradeChart historicalKlines={historicalKlines} pair={pair} />
         </div>
         {/* Depth Data */}
         <div className="w-1/4">

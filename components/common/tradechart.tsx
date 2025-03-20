@@ -1,15 +1,18 @@
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import { useEffect, useRef, memo } from 'react';
 
 interface TradeChartProps {
     historicalKlines: any[]; // Receives kline data from parent
+    pair: string; // Add pair prop
 }
 
-const TradeChart = ({ historicalKlines }: TradeChartProps) => {
+const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
     // Refs to maintain chart instances across re-renders
     const chartContainerRef = useRef<HTMLDivElement>(null);  // Reference to the DOM container
     const chartRef = useRef<any>(null);      // Reference to the main chart instance
     const seriesRef = useRef<any>(null);     // Reference to the candlestick series
+    const volumeSeriesRef = useRef<any>(null); // Reference to the volume series
+    const previousPairRef = useRef<string>(pair);
 
     useEffect(() => {
         if (chartContainerRef.current) {
@@ -40,6 +43,30 @@ const TradeChart = ({ historicalKlines }: TradeChartProps) => {
                 wickDownColor: '#ef5350'
             });
 
+            // Configure candlestick series margins
+            seriesRef.current.priceScale().applyOptions({
+                scaleMargins: {
+                    top: 0.1, // highest point of the series will be 10% away from the top
+                    bottom: 0.4, // lowest point will be 40% away from the bottom
+                }
+            });
+
+            // Add the volume series
+            volumeSeriesRef.current = chartRef.current.addSeries(HistogramSeries, {
+                priceFormat: {
+                    type: 'volume',
+                },
+                priceScaleId: '', // set as an overlay
+            });
+
+            // Configure volume series margins
+            volumeSeriesRef.current.priceScale().applyOptions({
+                scaleMargins: {
+                    top: 0.7, // highest point of the series will be 70% away from the top
+                    bottom: 0, // lowest point will be at the very bottom
+                },
+            });
+
             // Handle resize
             const handleResize = () => {
                 chartRef.current.applyOptions({
@@ -59,10 +86,31 @@ const TradeChart = ({ historicalKlines }: TradeChartProps) => {
 
     // Update the chart with new kline data
     useEffect(() => {
-        if (seriesRef.current && historicalKlines.length > 0) {
+        if (seriesRef.current && volumeSeriesRef.current && historicalKlines.length > 0) {
+            // Update candlestick data
             seriesRef.current.setData(historicalKlines);
+
+            // Update volume data with colors based on price movement
+            const volumeData = historicalKlines.map((kline: any) => ({
+                time: kline.time,
+                value: parseFloat(kline.volume || 0),
+                color: kline.close >= kline.open ? '#26a69a80' : '#ef535080'
+            }));
+            volumeSeriesRef.current.setData(volumeData);
+
+            // Only fit content and reset scale when pair changes
+            if (previousPairRef.current !== pair) {
+                seriesRef.current.priceScale().applyOptions({
+                    autoScale: true
+                });
+                
+                requestAnimationFrame(() => {
+                    chartRef.current.timeScale().fitContent();
+                });
+                previousPairRef.current = pair;
+            }
         }
-    }, [historicalKlines]);
+    }, [historicalKlines, pair]);
 
     // Render the chart container
     return (

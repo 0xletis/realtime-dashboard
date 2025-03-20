@@ -107,7 +107,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
           const message = JSON.parse(event.data);
           
           if (message.result !== undefined) {
-            console.log("Subscription result:", message);
             return;
           }
 
@@ -120,15 +119,11 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
               if (!firstEventReceived.current) {
                 firstEventU.current = depthEvent.U;
                 firstEventReceived.current = true;
-                console.log(`First depth event received, U=${firstEventU.current}`);
-                
-                // Step 3: Get depth snapshot
                 fetchDepthSnapshot(currentPair.current);
               }
               
               // Add the event to the buffer
               bufferedEvents.current.push(depthEvent);
-              console.log(`Buffered depth event: U=${depthEvent.U}, u=${depthEvent.u}`);
               
               // Process the events if we have a snapshot already
               if (localOrderBook.current) {
@@ -141,7 +136,8 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
                 open: parseFloat(klineData.k.o),
                 high: parseFloat(klineData.k.h),
                 low: parseFloat(klineData.k.l),
-                close: parseFloat(klineData.k.c)
+                close: parseFloat(klineData.k.c),
+                volume: parseFloat(klineData.k.v)  // Add volume here
               };
 
               setState(prev => {
@@ -190,7 +186,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
   const fetchDepthSnapshot = async (symbol: string) => {
     try {
       const upperSymbol = symbol.toUpperCase();
-      console.log(`Fetching depth snapshot for ${upperSymbol}`);
       
       const response = await fetch(`${BINANCE_API_URL}/depth?symbol=${upperSymbol}&limit=1000`);
       if (!response.ok) {
@@ -198,17 +193,14 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
       }
       
       const snapshot = await response.json();
-      console.log(`Depth snapshot received: lastUpdateId=${snapshot.lastUpdateId}`);
       
       // Step 4: Check if snapshot is newer than first event
       if (firstEventU.current !== null && snapshot.lastUpdateId < firstEventU.current) {
-        console.log("Snapshot is older than first event, fetching again...");
         return fetchDepthSnapshot(symbol);
       }
       
       // Step 5 and 6: Set local order book and discard outdated events
       localOrderBook.current = snapshot;
-      console.log(`Local order book initialized with lastUpdateId=${localOrderBook.current.lastUpdateId}`);
       
       // Update UI state
       setState(prev => ({ ...prev, depthData: { ...snapshot } }));
@@ -237,7 +229,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
     const events = [...bufferedEvents.current];
     bufferedEvents.current = [];
     
-    console.log(`Processing ${events.length} buffered events`);
     
     for (const event of events) {
       applyDepthEvent(event);
@@ -246,7 +237,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
   
   const applyDepthEvent = (event: any) => {
     if (!localOrderBook.current) {
-      console.log("No local order book, can't apply event");
       return;
     }
     
@@ -255,13 +245,11 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
     
     // If event.u <= lastUpdateId, ignore the event
     if (event.u <= lastUpdateId) {
-      console.log(`Ignoring event: event.u (${event.u}) <= lastUpdateId (${lastUpdateId})`);
       return;
     }
     
     // If event.U > lastUpdateId+1, restart
     if (event.U > lastUpdateId + 1) {
-      console.log(`Gap detected: event.U (${event.U}) > lastUpdateId+1 (${lastUpdateId + 1}), restarting`);
       firstEventReceived.current = false;
       firstEventU.current = null;
       bufferedEvents.current = [];
@@ -349,7 +337,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
         id: 2
       });
       ws.current.send(depthSubscribeMessage);
-      console.log(`Subscribed to depth for ${pair}`);
     }
   };
 
@@ -361,7 +348,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
         id: 2
       });
       ws.current.send(depthUnsubscribeMessage);
-      console.log(`Unsubscribed from depth for ${pair}`);
     }
   };
 
@@ -373,7 +359,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
         id: 3
       });
       ws.current.send(klinesSubscribeMessage);
-      console.log(`Subscribed to klines for ${pair} with timeframe ${timeframe}`);
     }
   };
 
@@ -385,7 +370,6 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
         id: 3
       });
       ws.current.send(klinesUnsubscribeMessage);
-      console.log(`Unsubscribed from klines for ${pair} with timeframe ${timeframe}`);
     }
   };
 
@@ -440,8 +424,10 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
         open: parseFloat(kline[1]),
         high: parseFloat(kline[2]),
         low: parseFloat(kline[3]),
-        close: parseFloat(kline[4])
+        close: parseFloat(kline[4]),
+        volume: parseFloat(kline[5])  // Add volume from historical data
       }));
+      
       
       setState(prev => ({ ...prev, historicalKlines: formattedKlines }));
       return formattedKlines;
