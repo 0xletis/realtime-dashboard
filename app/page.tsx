@@ -1,103 +1,178 @@
-import Image from "next/image";
+'use client'
+
+import { useBinanceWebSocket } from "./services/binanceWebSocket";
+import { useState, useEffect } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [isOpen, setIsOpen] = useState(false);
+  const { 
+    depthData, 
+    klinesData, 
+    status, 
+    error, 
+    isConnecting,
+    isConnected 
+  } = useBinanceWebSocket(isOpen);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Add effect to log data changes
+  useEffect(() => {
+    console.log("Page component received new data:", {
+      depthData,
+      klinesData,
+      status
+    });
+  }, [depthData, klinesData, status]);
+
+  const handleOpenConnection = () => {
+    console.log("Opening connection...");
+    setIsOpen(true);
+  };
+
+  const handleCloseConnection = () => {
+    console.log("Closing connection...");
+    setIsOpen(false);
+  };
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'connected':
+        return "🟢";
+      case 'connecting':
+        return "🟡";
+      case 'error':
+        return "🔴";
+      default:
+        return "⚪";
+    }
+  };
+
+  // Add debugging information
+  console.log("Current state:", {
+    isOpen,
+    status,
+    hasDepthData: !!depthData,
+    hasKlinesData: !!klinesData,
+    depthData,
+    klinesData
+  });
+
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Binance WebSocket Test</h1>
+      
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span>{getStatusIcon()}</span>
+          <span>Status: {status}</span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {error && (
+          <div className="text-red-500 mb-2">
+            Error: {error}
+          </div>
+        )}
+
+        <button
+          onClick={isConnected ? handleCloseConnection : handleOpenConnection}
+          className={`px-4 py-2 rounded ${
+            isConnected 
+              ? 'bg-red-500 hover:bg-red-600' 
+              : 'bg-green-500 hover:bg-green-600'
+          } text-white`}
+          disabled={isConnecting}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          {isConnecting 
+            ? 'Connecting...' 
+            : isConnected 
+              ? 'Close Connection' 
+              : 'Open Connection'
+          }
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Klines Data */}
+        <div className="mt-4">
+          <h2 className="text-xl font-semibold mb-2">Klines Data:</h2>
+          <div className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
+            {klinesData && klinesData.k ? (
+              <div>
+                <div className="mb-2">
+                  <strong>Symbol:</strong> {klinesData.s}
+                </div>
+                <div className="mb-2">
+                  <strong>Interval:</strong> {klinesData.k.i}
+                </div>
+                <div className="mb-2">
+                  <strong>Event Time:</strong> {new Date(klinesData.E).toLocaleString()}
+                </div>
+                <div className="mt-2">
+                  <h3 className="font-semibold mb-1">Candle Data:</h3>
+                  <div className="space-y-1">
+                    <div>Open Time: {new Date(klinesData.k.t).toLocaleString()}</div>
+                    <div>Close Time: {new Date(klinesData.k.T).toLocaleString()}</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Open: <span className="text-green-600">{klinesData.k.o}</span></div>
+                      <div>Close: <span className="text-red-600">{klinesData.k.c}</span></div>
+                      <div>High: <span className="text-green-600">{klinesData.k.h}</span></div>
+                      <div>Low: <span className="text-red-600">{klinesData.k.l}</span></div>
+                    </div>
+                    <div>Volume: {klinesData.k.v}</div>
+                    <div>Quote Volume: {klinesData.k.q}</div>
+                    <div>Number of Trades: {klinesData.k.n}</div>
+                    <div>Status: {klinesData.k.x ? 'Closed' : 'Open'}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">No klines data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Depth Data */}
+        <div className="mt-4">
+          <h2 className="text-xl font-semibold mb-2">Order Book (Depth):</h2>
+          <div className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
+            {depthData && depthData.b && depthData.a ? (
+              <div>
+                <div className="mb-2">
+                  <strong>Last Update ID:</strong> {depthData.u}
+                </div>
+                <div className="mb-2">
+                  <strong>Event Time:</strong> {new Date(depthData.E).toLocaleString()}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold mb-1">Bids (Top 10)</h3>
+                    <div className="space-y-1">
+                      {Array.isArray(depthData.b) && depthData.b.slice(0, 10).map((bid: string[], index: number) => (
+                        <div key={index} className="text-green-600">
+                          Price: {bid[0]} | Quantity: {bid[1]}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Asks (Top 10)</h3>
+                    <div className="space-y-1">
+                      {Array.isArray(depthData.a) && depthData.a.slice(0, 10).map((ask: string[], index: number) => (
+                        <div key={index} className="text-red-600">
+                          Price: {ask[0]} | Quantity: {ask[1]}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">No depth data available</div>
+            )}
+          </div>
+        </div>
+        
+      </div>
     </div>
   );
 }
