@@ -1,8 +1,14 @@
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import { useEffect, useRef, memo } from 'react';
 
-const TradeChart = () => {
+interface TradeChartProps {
+    historicalKlines: any[];
+}
+
+const TradeChart = ({ historicalKlines }: TradeChartProps) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<any>(null);
+    const seriesRef = useRef<any>(null);
 
     useEffect(() => {
         if (chartContainerRef.current) {
@@ -16,8 +22,9 @@ const TradeChart = () => {
                     background: { color: 'white' }
                 }
             };
-            const chart = createChart(container, chartOptions);
-            const candlestickSeries = chart.addSeries(CandlestickSeries, {
+
+            chartRef.current = createChart(container, chartOptions);
+            seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
                 upColor: '#26a69a',
                 downColor: '#ef5350',
                 borderVisible: false,
@@ -25,25 +32,9 @@ const TradeChart = () => {
                 wickDownColor: '#ef5350'
             });
 
-            const data = [
-                { open: 10, high: 10.63, low: 9.49, close: 9.55, time: '2022-01-17' },
-                { open: 9.55, high: 10.30, low: 9.42, close: 9.94, time: '2022-01-18' },
-                { open: 9.94, high: 10.17, low: 9.92, close: 9.78, time: '2022-01-19' },
-                { open: 9.78, high: 10.59, low: 9.18, close: 9.51, time: '2022-01-20' },
-                { open: 9.51, high: 10.46, low: 9.10, close: 10.17, time: '2022-01-21' },
-                { open: 10.17, high: 10.96, low: 10.16, close: 10.47, time: '2022-01-22' },
-                { open: 10.47, high: 11.39, low: 10.40, close: 10.81, time: '2022-01-23' },
-                { open: 10.81, high: 11.60, low: 10.30, close: 10.75, time: '2022-01-24' },
-                { open: 10.75, high: 11.60, low: 10.49, close: 10.93, time: '2022-01-25' },
-                { open: 10.93, high: 11.53, low: 10.76, close: 10.96, time: '2022-01-26' }
-            ];
-
-            candlestickSeries.setData(data);
-            chart.timeScale().fitContent();
-
             // Handle resize
             const handleResize = () => {
-                chart.applyOptions({
+                chartRef.current.applyOptions({
                     width: container.clientWidth,
                     height: container.clientHeight
                 });
@@ -53,10 +44,16 @@ const TradeChart = () => {
 
             return () => {
                 window.removeEventListener('resize', handleResize);
-                chart.remove();
+                chartRef.current.remove();
             };
         }
     }, []);
+
+    useEffect(() => {
+        if (seriesRef.current && historicalKlines.length > 0) {
+            seriesRef.current.setData(historicalKlines);
+        }
+    }, [historicalKlines]);
 
     return (
         <div ref={chartContainerRef}

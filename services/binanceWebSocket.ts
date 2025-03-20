@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 const BINANCE_WS_URL = "wss://stream.binance.com:9443/stream";
-const BINANCE_API_URL = "https://api.binance.com/api/v3/depth";
+const BINANCE_API_URL = "https://api.binance.com/api/v3";
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 3;
+const CONNECTION_CHECK_INTERVAL = 3000; // 3 seconds
 
 interface KlineData {
   t: number;  // Kline start time
@@ -33,16 +34,23 @@ interface KlineMessage {
 interface WebSocketState {
   depthData: any;
   klinesData: KlineMessage | null;
+  historicalKlines: any[];
+  connectionStatus: 'connected' | 'disconnected';
+  lastError: string | null;
 }
 
 export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: string) => {
   const [state, setState] = useState<WebSocketState>({
     depthData: null,
     klinesData: null,
+    historicalKlines: [],
+    connectionStatus: 'disconnected',
+    lastError: null
   });
   
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const connectionCheckInterval = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef<number>(0);
   const userInitiatedClose = useRef<boolean>(false);
   const currentPair = useRef<string>(pair);
@@ -51,8 +59,19 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
   const firstEventReceived = useRef<boolean>(false);
   const firstEventU = useRef<number | null>(null);
   const localOrderBook = useRef<any>(null);
-  
-  // Step 1: Open WebSocket connection
+  const lastMessageTimestamp = useRef<number>(Date.now());
+
+  const checkConnection = () => {
+    const now = Date.now();
+    const timeSinceLastMessage = now - lastMessageTimestamp.current;
+
+    // If no message received in last 5 seconds, consider disconnected
+    setState(prev => ({
+      ...prev,
+      connectionStatus: timeSinceLastMessage > 5000 ? 'disconnected' : 'connected'
+    }));
+  };
+
   const connect = async () => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       return;
@@ -69,14 +88,21 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
 
       ws.current.onopen = () => {
         reconnectAttempts.current = 0;
-        console.log("WebSocket connected, subscribing to streams...");
         
-        // Subscribe to streams first to start collecting events
+        // Start connection check interval
+        if (connectionCheckInterval.current) {
+          clearInterval(connectionCheckInterval.current);
+        }
+        connectionCheckInterval.current = setInterval(checkConnection, CONNECTION_CHECK_INTERVAL);
+        
         subscribeToDepth(currentPair.current);
         subscribeToKlines(currentPair.current, currentTimeframe.current);
       };
 
       ws.current.onmessage = (event) => {
+        lastMessageTimestamp.current = Date.now();
+        setState(prev => ({ ...prev, connectionStatus: 'connected' }));
+        
         try {
           const message = JSON.parse(event.data);
           
@@ -109,7 +135,32 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
                 processBufferedEvents();
               }
             } else if (message.stream.includes('@kline')) {
-              setState(prev => ({ ...prev, klinesData: message.data }));
+              const klineData = message.data;
+              const newKline = {
+                time: klineData.k.t / 1000,
+                open: parseFloat(klineData.k.o),
+                high: parseFloat(klineData.k.h),
+                low: parseFloat(klineData.k.l),
+                close: parseFloat(klineData.k.c)
+              };
+
+              setState(prev => {
+                // Update the last candle if it's the same timestamp, otherwise add new
+                const updatedKlines = [...prev.historicalKlines];
+                const lastIndex = updatedKlines.length - 1;
+                
+                if (lastIndex >= 0 && updatedKlines[lastIndex].time === newKline.time) {
+                  updatedKlines[lastIndex] = newKline;
+                } else {
+                  updatedKlines.push(newKline);
+                }
+
+                return {
+                  ...prev,
+                  klinesData: message.data,
+                  historicalKlines: updatedKlines
+                };
+              });
             }
           }
         } catch (error) {
@@ -141,7 +192,7 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
       const upperSymbol = symbol.toUpperCase();
       console.log(`Fetching depth snapshot for ${upperSymbol}`);
       
-      const response = await fetch(`${BINANCE_API_URL}?symbol=${upperSymbol}&limit=1000`);
+      const response = await fetch(`${BINANCE_API_URL}/depth?symbol=${upperSymbol}&limit=1000`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -346,6 +397,11 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
       reconnectTimeout.current = null;
     }
 
+    if (connectionCheckInterval.current) {
+      clearInterval(connectionCheckInterval.current);
+      connectionCheckInterval.current = null;
+    }
+
     if (ws.current) {
       if (ws.current.readyState === WebSocket.OPEN) {
         unsubscribeFromDepth(currentPair.current);
@@ -355,16 +411,49 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
       ws.current = null;
     }
 
-    setState({
+    setState(prev => ({
+      ...prev,
       depthData: null,
       klinesData: null,
-    });
+      historicalKlines: [],
+      connectionStatus: 'disconnected'
+    }));
     
     reconnectAttempts.current = 0;
     firstEventReceived.current = false;
     firstEventU.current = null;
     bufferedEvents.current = [];
     localOrderBook.current = null;
+  };
+
+  const fetchHistoricalKlines = async (symbol: string, interval: string) => {
+    try {
+      setState(prev => ({ ...prev, lastError: null }));
+      const response = await fetch(`${BINANCE_API_URL}/klines?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=1000`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const formattedKlines = data.map((kline: any[]) => ({
+        time: kline[0] / 1000,
+        open: parseFloat(kline[1]),
+        high: parseFloat(kline[2]),
+        low: parseFloat(kline[3]),
+        close: parseFloat(kline[4])
+      }));
+      
+      setState(prev => ({ ...prev, historicalKlines: formattedKlines }));
+      return formattedKlines;
+    } catch (error) {
+      console.error("Failed to fetch historical klines:", error);
+      setState(prev => ({
+        ...prev,
+        lastError: 'Failed to fetch historical data',
+        historicalKlines: []
+      }));
+      return [];
+    }
   };
 
   useEffect(() => {
@@ -374,6 +463,7 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
     if (isOpen) {
       disconnect();
       connect();
+      fetchHistoricalKlines(currentPair.current, currentTimeframe.current);
     } else {
       disconnect();
     }
@@ -387,13 +477,17 @@ export const useBinanceWebSocket = (isOpen: boolean, timeframe: string, pair: st
     if (isOpen) {
       unsubscribeFromKlines(currentPair.current, currentTimeframe.current);
       currentTimeframe.current = timeframe;
-      subscribeToKlines(currentPair.current, currentTimeframe.current);
+      fetchHistoricalKlines(currentPair.current, currentTimeframe.current).then(() => {
+        subscribeToKlines(currentPair.current, currentTimeframe.current);
+      });
     }
   }, [timeframe]);
 
   return {
     depthData: state.depthData,
     klinesData: state.klinesData,
-    isConnected: !!state.depthData && !!state.klinesData,
+    historicalKlines: state.historicalKlines,
+    connectionStatus: state.connectionStatus,
+    lastError: state.lastError,
   };
 };
