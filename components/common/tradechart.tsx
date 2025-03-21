@@ -1,17 +1,26 @@
-import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, HistogramSeries, IChartApi, ISeriesApi, Time } from 'lightweight-charts';
 import { useEffect, useRef, memo } from 'react';
 
+interface KlineData {
+    time: Time;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: string;
+}
+
 interface TradeChartProps {
-    historicalKlines: any[]; // Receives kline data from parent
-    pair: string; // Add pair prop
+    historicalKlines: KlineData[];
+    pair: string;
 }
 
 const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
     // Refs to maintain chart instances across re-renders
-    const chartContainerRef = useRef<HTMLDivElement>(null);  // Reference to the DOM container
-    const chartRef = useRef<any>(null);      // Reference to the main chart instance
-    const seriesRef = useRef<any>(null);     // Reference to the candlestick series
-    const volumeSeriesRef = useRef<any>(null); // Reference to the volume series
+    const chartContainerRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<IChartApi | null>(null);
+    const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+    const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
     const previousPairRef = useRef<string>(pair);
 
     useEffect(() => {
@@ -57,8 +66,8 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
             // Configure candlestick series margins
             seriesRef.current.priceScale().applyOptions({
                 scaleMargins: {
-                    top: 0.1, // highest point of the series will be 10% away from the top
-                    bottom: 0.4, // lowest point will be 40% away from the bottom
+                    top: 0.1,
+                    bottom: 0.4,
                 },
                 autoScale: true
             });
@@ -68,52 +77,58 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
                 priceFormat: {
                     type: 'volume',
                 },
-                priceScaleId: '', // set as an overlay
+                priceScaleId: '',
             });
 
             // Configure volume series margins
             volumeSeriesRef.current.priceScale().applyOptions({
                 scaleMargins: {
-                    top: 0.7, // highest point of the series will be 70% away from the top
-                    bottom: 0, // lowest point will be at the very bottom
+                    top: 0.7,
+                    bottom: 0,
                 },
             });
 
             // Handle resize
             const handleResize = () => {
-                chartRef.current.applyOptions({
-                    width: container.clientWidth,
-                    height: container.clientHeight
-                });
+                if (chartRef.current) {
+                    chartRef.current.applyOptions({
+                        width: container.clientWidth,
+                        height: container.clientHeight
+                    });
+                }
             };
             window.addEventListener('resize', handleResize);
 
             // Cleanup on unmount
             return () => {
                 window.removeEventListener('resize', handleResize);
-                chartRef.current.remove();
+                if (chartRef.current) {
+                    chartRef.current.remove();
+                }
             };
         }
-    }, []);
+    }, [pair]); // Added pair to dependency array
 
     // Update the chart with new kline data
     useEffect(() => {
         if (seriesRef.current && volumeSeriesRef.current && historicalKlines.length > 0) {
             // Sort data by time in ascending order
-            const sortedKlines = [...historicalKlines].sort((a, b) => a.time - b.time);
+            const sortedKlines = [...historicalKlines].sort((a, b) => 
+                (typeof a.time === 'number' ? a.time : 0) - (typeof b.time === 'number' ? b.time : 0)
+            );
 
             // Update candlestick data
             seriesRef.current.setData(sortedKlines);
 
             // Find the scale factor for volume if needed
-            const maxVolume = Math.max(...sortedKlines.map(kline => parseFloat(kline.volume || 0)));
+            const maxVolume = Math.max(...sortedKlines.map(kline => parseFloat(kline.volume || '0')));
             const VOLUME_LIMIT = 90071992547409;
             const scaleFactor = maxVolume > VOLUME_LIMIT ? VOLUME_LIMIT / maxVolume : 1;
 
             // Update volume data with colors based on price movement
-            const volumeData = sortedKlines.map((kline: any) => ({
+            const volumeData = sortedKlines.map((kline) => ({
                 time: kline.time,
-                value: parseFloat(kline.volume || 0) * scaleFactor,
+                value: parseFloat(kline.volume || '0') * scaleFactor,
                 color: kline.close >= kline.open ? '#22c55e80' : '#ef444480'
             }));
             volumeSeriesRef.current.setData(volumeData);
@@ -135,14 +150,15 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
                 });
                 
                 requestAnimationFrame(() => {
-                    chartRef.current.timeScale().fitContent();
+                    if (chartRef.current) {
+                        chartRef.current.timeScale().fitContent();
+                    }
                 });
                 previousPairRef.current = pair;
             }
         }
     }, [historicalKlines, pair]);
 
-    // Render the chart container
     return (
         <div ref={chartContainerRef}
             className="h-full w-full flex-1 overflow-hidden rounded-xl border border-[#003920] bg-[#001a0f]"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useBinanceWebSocket } from "@/services/binanceWebSocket";
 import TradeChart from "@/components/common/tradechart";
 import Header from "@/components/common/header";
@@ -11,8 +11,7 @@ export default function Home() {
   const [timeframe, setTimeframe] = useState("1m");
   const [pair, setPair] = useState("btcusdt");
   const { 
-    depthData, 
-    klinesData, 
+    depthData,  
     historicalKlines,
     connectionStatus
   } = useBinanceWebSocket(true, timeframe, pair);
