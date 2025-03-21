@@ -23,11 +23,16 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
                 width: container.clientWidth,
                 height: container.clientHeight,
                 layout: {
-                    textColor: 'black',
-                    background: { color: 'white' }
+                    textColor: '#ffffff',
+                    background: { color: '#001a0f' }
                 },
                 timeScale: {
-                    timeVisible: true
+                    timeVisible: true,
+                    borderColor: '#003920'
+                },
+                grid: {
+                    vertLines: { color: '#002713' },
+                    horzLines: { color: '#002713' }
                 }
             };
 
@@ -37,11 +42,11 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
             // Add the candlestick series
             const isLowValuePair = pair.toUpperCase() === 'PEPEUSDT';
             seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-                upColor: '#26a69a',
-                downColor: '#ef5350',
+                upColor: '#22c55e',
+                downColor: '#ef4444',
                 borderVisible: false,
-                wickUpColor: '#26a69a',
-                wickDownColor: '#ef5350',
+                wickUpColor: '#22c55e',
+                wickDownColor: '#ef4444',
                 priceFormat: {
                     type: 'price',
                     precision: isLowValuePair ? 8 : 2,
@@ -109,7 +114,7 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
             const volumeData = sortedKlines.map((kline: any) => ({
                 time: kline.time,
                 value: parseFloat(kline.volume || 0) * scaleFactor,
-                color: kline.close >= kline.open ? '#26a69a80' : '#ef535080'
+                color: kline.close >= kline.open ? '#22c55e80' : '#ef444480'
             }));
             volumeSeriesRef.current.setData(volumeData);
 
@@ -140,7 +145,7 @@ const TradeChart = ({ historicalKlines, pair }: TradeChartProps) => {
     // Render the chart container
     return (
         <div ref={chartContainerRef}
-            className="h-[calc(80vh)] w-full flex-1 overflow-hidden rounded-xl border border-white/30 bg-white/10"
+            className="h-full w-full flex-1 overflow-hidden rounded-xl border border-[#003920] bg-[#001a0f]"
         />
     );
 };
