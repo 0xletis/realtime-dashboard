@@ -28,8 +28,6 @@ export default function Home() {
   return (
     <div className="font-mono bg-[#001a0f] min-h-screen h-screen flex flex-col text-gray-100">
       <Header 
-        title="PROTRADE"
-        subtitle="Live Market Data"
         githubUrl="https://github.com/0xletis/realtime-dashboard"
       />
       <div className="flex gap-4 p-4 flex-1 h-[calc(100vh-4rem)]">

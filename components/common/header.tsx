@@ -1,19 +1,15 @@
 interface HeaderProps {
-  title: string;
-  subtitle: string;
   githubUrl: string;
 }
 
-const Header = ({ title, subtitle, githubUrl }: HeaderProps) => {
-  const [firstPart, ...rest] = title.split(/(?=[A-Z])/);
-  const secondPart = rest.join('');
+const Header = ({githubUrl }: HeaderProps) => {
 
   return (
     <div className="border-b border-[#003920] p-2 w-full bg-[#002713]/50 shadow-lg">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-extrabold text-white tracking-tight">
-          <span className="text-green-400">{firstPart}</span>{secondPart}
-          <span className="text-xs font-normal text-gray-400 ml-2">{subtitle}</span>
+          <span className="text-green-400">FAST</span>DASH
+          <span className="text-xs font-normal text-gray-400 ml-2">Live Market Data</span>
         </h1>
         <a
           href={githubUrl}
