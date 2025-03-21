@@ -39,7 +39,7 @@ export default function Home() {
             onPairChange={handlePairChange}
           />
           {/* Kline Chart */}
-          <div className="flex-1 rounded-lg overflow-hidden bg-[#001a0f] border border-[#003920]">
+          <div className="flex-1 rounded-lg overflow-hidden bg-[#001a0f]">
             <TradeChart historicalKlines={historicalKlines} pair={pair} />
           </div>
         </div>

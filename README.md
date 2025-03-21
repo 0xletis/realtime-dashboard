@@ -1,5 +1,7 @@
 # FASTDASH - Real-time Crypto Trading Dashboard
 
+🚀 [Live Demo](https://fastdash-eta.vercel.app/)
+
 A modern, real-time cryptocurrency trading dashboard built with Next.js 13, featuring live price charts, order book depth visualization, and WebSocket integration with Binance's public API.
 
 ## Features
