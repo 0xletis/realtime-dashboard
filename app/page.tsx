@@ -30,20 +30,22 @@ export default function Home() {
       <Header 
         githubUrl="https://github.com/0xletis/realtime-dashboard"
       />
-      <div className="flex gap-4 p-4 flex-1 h-[calc(100vh-4rem)]">
-        <div className="w-3/4 flex flex-col">
+      {/* Main content area with responsive layout */}
+      <div className="flex flex-col lg:flex-row gap-4 p-4 flex-1 h-[calc(100vh-4rem)] overflow-y-auto lg:overflow-hidden">
+        {/* Chart section - full width on mobile, 3/4 on desktop */}
+        <div className="w-full lg:w-3/4 flex flex-col min-h-[500px]">
           <Controls 
             connectionStatus={connectionStatus}
             onTimeframeChange={handleTimeframeChange}
             onPairChange={handlePairChange}
           />
           {/* Kline Chart */}
-          <div className="flex-1 rounded-lg overflow-hidden">
+          <div className="flex-1 rounded-lg overflow-hidden bg-[#001a0f] border border-[#003920]">
             <TradeChart historicalKlines={historicalKlines} pair={pair} />
           </div>
         </div>
-        {/* Depth Data */}
-        <div className="w-1/4 h-full">
+        {/* Depth Data - full width on mobile, 1/4 on desktop */}
+        <div className="w-full lg:w-1/4 h-[600px] lg:h-full">
           <Orderbook depthData={depthData}></Orderbook>
         </div>
       </div>

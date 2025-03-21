@@ -47,7 +47,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
     
     return (
       <Card className="w-full h-full bg-[#001a0f] border-[#003920] text-gray-100 flex flex-col">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex-none">
           <CardTitle className="flex justify-between items-center">
             <span className="text-white text-sm">Order Book</span>
             <span className="text-xs font-normal text-gray-400 font-mono">
@@ -55,15 +55,15 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-2">
+        <CardContent className="flex-1 flex flex-col p-2 min-h-0">
           {/* Asks (Sells) */}
-          <div className="flex-1 flex flex-col">
-            <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400 flex-none">
               <div className="col-span-5 text-left">Price</div>
               <div className="col-span-4 text-right">Amount</div>
               <div className="col-span-3 text-right">Total</div>
             </div>
-            <div className="space-y-[2px] flex-1 overflow-auto">
+            <div className="space-y-[2px] flex-1 overflow-y-auto min-h-0">
               {emptyRows.map((_, index) => (
                 <div key={`empty-ask-${index}`} className="grid grid-cols-12 text-xs py-1 px-2">
                   <div className="col-span-5 text-left font-mono text-gray-500">---.--</div>
@@ -75,19 +75,19 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
           </div>
 
           {/* Spread */}
-          <div className="py-1 px-2 my-1 border-y border-[#003920] flex justify-between text-xs">
+          <div className="py-1 px-2 my-1 border-y border-[#003920] flex justify-between text-xs flex-none">
             <span className="font-medium text-white">Spread</span>
             <span className="font-mono text-gray-300">0.00 (0.00%)</span>
           </div>
 
           {/* Bids (Buys) */}
-          <div className="flex-1 flex flex-col">
-            <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400 flex-none">
               <div className="col-span-5 text-left">Price</div>
               <div className="col-span-4 text-right">Amount</div>
               <div className="col-span-3 text-right">Total</div>
             </div>
-            <div className="space-y-[2px] flex-1 overflow-auto">
+            <div className="space-y-[2px] flex-1 overflow-y-auto min-h-0">
               {emptyRows.map((_, index) => (
                 <div key={`empty-bid-${index}`} className="grid grid-cols-12 text-xs py-1 px-2">
                   <div className="col-span-5 text-left font-mono text-gray-500">---.--</div>
@@ -122,7 +122,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
 
   return (
     <Card className="w-full h-full bg-[#001a0f] border-[#003920] text-gray-100 flex flex-col">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex-none">
         <CardTitle className="flex justify-between items-center">
           <span className="text-white text-sm">Order Book</span>
           <span className="text-xs font-normal text-gray-400 font-mono">
@@ -130,15 +130,15 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-2">
+      <CardContent className="flex-1 flex flex-col p-2 min-h-0">
         {/* Asks (Sells) */}
-        <div className="flex-1 flex flex-col">
-          <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400 flex-none">
             <div className="col-span-5 text-left">Price</div>
             <div className="col-span-4 text-right">Amount</div>
             <div className="col-span-3 text-right">Total</div>
           </div>
-          <div className="space-y-[2px] flex-1 overflow-auto">
+          <div className="space-y-[2px] flex-1 overflow-y-auto min-h-0">
             {sortedAsks.map((ask, index) => {
               const price = Number.parseFloat(ask[0]);
               const quantity = Number.parseFloat(ask[1]);
@@ -162,7 +162,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
         </div>
 
         {/* Spread */}
-        <div className="py-1 px-2 my-1 border-y border-[#003920] flex justify-between text-xs">
+        <div className="py-1 px-2 my-1 border-y border-[#003920] flex justify-between text-xs flex-none">
           <span className="font-medium text-white">Spread</span>
           <span className="font-mono text-gray-300">
             {spread.toFixed(2)} ({spreadPercentage.toFixed(2)}%)
@@ -170,13 +170,13 @@ const OrderBook: React.FC<OrderBookProps> = ({ depthData }) => {
         </div>
 
         {/* Bids (Buys) */}
-        <div className="flex-1 flex flex-col">
-          <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="grid grid-cols-12 text-xs font-medium mb-1 px-2 text-gray-400 flex-none">
             <div className="col-span-5 text-left">Price</div>
             <div className="col-span-4 text-right">Amount</div>
             <div className="col-span-3 text-right">Total</div>
           </div>
-          <div className="space-y-[2px] flex-1 overflow-auto">
+          <div className="space-y-[2px] flex-1 overflow-y-auto min-h-0">
             {sortedBids.map((bid, index) => {
               const price = Number.parseFloat(bid[0]);
               const quantity = Number.parseFloat(bid[1]);
