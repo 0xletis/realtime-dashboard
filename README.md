@@ -2,8 +2,6 @@
 
 A modern, real-time cryptocurrency trading dashboard built with Next.js 13, featuring live price charts, order book depth visualization, and WebSocket integration with Binance's public API.
 
-![Dashboard Preview](preview.png)
-
 ## Features
 
 - 📊 Real-time candlestick charts with TradingView's lightweight-charts
